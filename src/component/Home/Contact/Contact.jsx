@@ -3,19 +3,23 @@ import { Col, Row, Button, Modal } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Contact.css";
 import contactImg from "../../../Assets/contact.svg";
-import firebase from "firebase/compat/app";
-import "firebase/compat/firestore";
-import "firebase/compat/storage";
+
 import Swal from "sweetalert2";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
-
+import { generateVisitorId } from "./Utile";
 import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { StaticTimePicker } from "@mui/x-date-pickers/StaticTimePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { startOfDay, isBefore } from "date-fns";
-
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query, where, onSnapshot,
+} from "firebase/firestore";
+import { db } from "../../Login/FirebaseAuth"
 const Contact = () => {
   const [personConcerned, setPersonConcerned] = useState("");
   const [name, setName] = useState("");
@@ -33,6 +37,7 @@ const Contact = () => {
   const [showModal, setShowModal] = useState(false);
   const [isDateSelected, setIsDateSelected] = useState(false);
 
+  console.log("existingDates", existingDates)
   // Fonction pour ouvrir la modale
   const handleOpenModal = () => {
     setShowModal(true);
@@ -54,13 +59,13 @@ const Contact = () => {
     }
   };
 
-  const generateFirebaseId = () => {
-    const firestore = firebase.firestore();
-    const collectionRef = firestore.collection("visitor");
-    const docRef = collectionRef.doc(); // Crée un document avec un ID unique
+  // const generateFirebaseId = () => {
+  //   const firestore = firebase.firestore();
+  //   const collectionRef = firestore.collection("visitor");
+  //   const docRef = collectionRef.doc(); // Crée un document avec un ID unique
 
-    return docRef.id;
-  };
+  //   return docRef.id;
+  // };
 
   // ...Limiter l'heure de la recepetion de service
   const handleTimeChange = (time) => {
@@ -88,7 +93,7 @@ const Contact = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    const visitorId = generateFirebaseId();
+    const visitorId = generateVisitorId();
 
     const qrCodeData = {
       personConcerned,
@@ -102,7 +107,7 @@ const Contact = () => {
       dateVisite: formattedDate,
       heureVisite: formattedTime,
       matricule,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      timestamp: serverTimestamp(),
       visitorId: visitorId,
       isConfirmedService: false,
     };
@@ -138,10 +143,7 @@ const Contact = () => {
     // };
 
     // Envoyer les données chiffrées dans la base de données Firebase
-    firebase
-      .firestore()
-      .collection("visitor")
-      .add(qrCodeData)
+    addDoc(collection(db, "visitor"), qrCodeData)
       .then(() => {
         console.log(
           "Données chiffrées enregistrées avec succès dans Firebase !"
@@ -164,22 +166,31 @@ const Contact = () => {
   };
 
   useEffect(() => {
-    // Récupérer les demandes existantes depuis Firebase Firestore
-    const firestore = firebase.firestore();
-    firestore
-      .collection("visitor")
-      .where("isConfirmedService", "==", true) // Remplacez "isConfirmedService" par le champ indiquant si la demande a été acceptée
-      .get()
-      .then((querySnapshot) => {
-        const dates = querySnapshot.docs.map((doc) => doc.data().dateVisite);
-        setExistingDates(dates);
-      })
-      .catch((error) => {
-        console.error(
-          "Erreur lors de la récupération des demandes existantes :",
-          error
-        );
-      });
+      // créez une requête Firestore pour récupérer les utilisateurs
+      const q = query(collection(db, "visitor"), where("isConfirmedService", "==", true));
+
+        // utilisez onSnapshot pour écouter les changements en temps réel de la collection
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const dates = querySnapshot.docs.map((doc) => doc.data().dateVisite);
+      setExistingDates(dates);
+    });
+    return unsubscribe;
+  
+    // const firestore = firebase.firestore();
+    // firestore
+    //   .collection("visitor")
+    //   .where("isConfirmedService", "==", true)
+    //   .get()
+    //   .then((querySnapshot) => {
+    //     const dates = querySnapshot.docs.map((doc) => doc.data().dateVisite);
+    //     setExistingDates(dates);
+    //   })
+    //   .catch((error) => {
+    //     console.error(
+    //       "Erreur lors de la récupération des demandes existantes :",
+    //       error
+    //     );
+    //   });
   }, []);
   // ...
 

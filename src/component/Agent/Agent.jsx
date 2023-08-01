@@ -1,7 +1,7 @@
 import Swal from "sweetalert2";
 import * as React from "react";
 
-import { useState } from "react";
+
 import { useForm } from "react-hook-form";
 import bgImage from "../../Assets/bg.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -101,10 +101,10 @@ function SignIn({ onLogin }) {
 }
 
 const Agent = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
 
   const handleLogin = () => {
-    setIsAuthenticated(true);
+
     localStorage.setItem("isAuthenticated", true);
   };
 

@@ -7,8 +7,9 @@ import {
   where,
   onSnapshot,
   addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
-import firebase from "firebase/compat/app";
+
 import { db } from "../Login/FirebaseAuth";
 import Swal from "sweetalert2";
 import { Col } from "react-bootstrap";
@@ -229,11 +230,11 @@ const AgentInterface = () => {
       const signalData = {
         reportText,
         immatriculation,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        timestamp:serverTimestamp(),
       };
 
       // Par exemple, si vous avez une collection "reports" dans votre base de données Firebase :
-      const docRef = await addDoc(collection(db, "reports"), signalData);
+      await addDoc(collection(db, "reports"), signalData);
       return true; // Retourner true pour indiquer que le signalement a réussi
     } catch (error) {
       console.error("Erreur lors de l'enregistrement du signalement :", error);
