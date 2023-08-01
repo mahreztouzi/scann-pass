@@ -59,13 +59,7 @@ const Contact = () => {
     }
   };
 
-  // const generateFirebaseId = () => {
-  //   const firestore = firebase.firestore();
-  //   const collectionRef = firestore.collection("visitor");
-  //   const docRef = collectionRef.doc(); // Crée un document avec un ID unique
-
-  //   return docRef.id;
-  // };
+  
 
   // ...Limiter l'heure de la recepetion de service
   const handleTimeChange = (time) => {
@@ -332,7 +326,7 @@ const Contact = () => {
                   </select>
                 </Col>
                 <Col md={6} lg={6}>
-                  <label className="m-2">Sélectionnez un service</label>
+                  <label className=" m-2">Sélectionnez un service</label>
                   <select
                     value={valeurSelectionnee}
                     onChange={(e) => setValeurSelectionnee(e.target.value)}
@@ -359,7 +353,8 @@ const Contact = () => {
                           : "Sélectionner la date et l'heure du rende-vous"
                       }
                       placeholder="Sélectionner la date et l'heure du rende-vous"
-                      className="form-control bg-white"
+                      className="form-control bg-white  "
+                      style={{cursor:"pointer"}}
                     />
                   </div>
                   {/* La modale */}

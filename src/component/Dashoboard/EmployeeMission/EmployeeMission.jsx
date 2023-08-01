@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css";
 function EmployeeMission() {
   const [users, setUsers] = useState([]);
   const [map, setMap] = useState(null); // État pour stocker l'instance de la carte
+  const [ummtoMarker, setUmmtoMarker] = useState(null); 
 
   useEffect(() => {
     // Récupérer les utilisateurs confirmés depuis Firestore (nouvelle collection "Users")
@@ -36,17 +37,32 @@ function EmployeeMission() {
   useEffect(() => {
     // Créez une carte Leaflet lorsque les utilisateurs sont disponibles
     if (!map) {
-      const newMap = L.map("map").setView([36.7528, 3.0422], 6);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+      const newMap = L.map("map").setView([36.7039, 4.0482], 17);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
         newMap
       );
 
+      const ummtoIcon = L.icon({
+        iconUrl: "https://cdn-icons-png.flaticon.com/512/3033/3033337.png", // URL de l'icône personnalisée
+        iconSize: [55, 60], // Définissez la taille de l'icône (largeur, hauteur) en pixels
+        iconAnchor: [16, 32], // Définissez l'ancre de l'icône (point central bas) en pixels
+        popupAnchor: [0, -32], // Définissez l'ancre du popup (point supérieur gauche) en pixels
+      });
+
+           // Ajoutez le marqueur avec l'icône personnalisée sur la carte
+           const marker = L.marker([36.7039, 4.0482], {
+            icon: ummtoIcon,
+          }).addTo(newMap);
+    
+          marker.bindPopup("<b>Université Mouloud Mammeri Hassnoua</b>").openPopup();
+    
+          setUmmtoMarker(marker);
       setMap(newMap); // Stocker l'instance de la carte dans l'état
     }
 
     // Supprimer les marqueurs existants de la carte
     map?.eachLayer((layer) => {
-      if (layer instanceof L.Marker) {
+      if (layer instanceof L.Marker && layer !== ummtoMarker) {
         map.removeLayer(layer);
       }
     });
@@ -65,7 +81,9 @@ function EmployeeMission() {
         [user.location.latitude, user.location.longitude],
         { icon: customIcon }
       )
-        .bindPopup(user.name)
+        .bindPopup(`<b>${user.name}</b>`)
+        .openPopup()
+      
         .addTo(map);
 
       // Ajouter un gestionnaire d'événement pour déplacer la carte vers le marqueur lorsqu'il est cliqué
@@ -73,7 +91,7 @@ function EmployeeMission() {
         map.setView([user.location.latitude, user.location.longitude], 15);
       });
     });
-  }, [map, users]);
+  }, [ummtoMarker,map, users]);
 
   const handleUserClick = (user) => {
     map.setView([user.location.latitude, user.location.longitude], 15);
@@ -205,6 +223,7 @@ function EmployeeMission() {
               width: "100%",
               borderRadius: "15px",
               boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+           
             }}
           ></Box>
         </Grid>

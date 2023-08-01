@@ -32,27 +32,45 @@ const AgentInterface = () => {
           (visitor) => visitor.visitorId === data
         );
         if (matchedVisitor) {
-          // Faites ce que vous voulez avec le visiteur correspondant trouvé
-          console.log("Visiteur trouvé:", matchedVisitor);
-          Swal.fire({
-            title: "Autorisée !",
-            html: `Bienvenue <b> monsieur :</b> ${
-              matchedVisitor.name
-            }, <b> vehicule :</b>  ${
-              matchedVisitor.matricule
-                ? matchedVisitor.matricule
-                : "sans vehicule"
-            } `,
-            icon: "success",
-            confirmButtonText: "OK",
-            footer: `<b>VISITEUR : </b>  ${
-              matchedVisitor.personConcerned
-                ? matchedVisitor.personConcerned
-                : "visiteur normal"
-            }`,
-          }).then(() => {
-            setStopScan(true);
-          });
+          const today = new Date();
+          const dateVisite = new Date(matchedVisitor.dateVisite);
+        
+          if (dateVisite.toDateString() === today.toDateString()) {
+            // La date de visite correspond à aujourd'hui
+            console.log("Visiteur trouvé:", matchedVisitor);
+            Swal.fire({
+              title: "Autorisée !",
+              html: `Bienvenue <b> monsieur :</b> ${matchedVisitor.name}, <b> vehicule :</b>  ${
+                matchedVisitor.matricule ? matchedVisitor.matricule : "sans vehicule"
+              } `,
+              icon: "success",
+              confirmButtonText: "OK",
+              footer: `<b>VISITEUR  </b>  ${
+                matchedVisitor.personConcerned
+                  ? matchedVisitor.personConcerned
+                  : " _visiteur externe"
+              }`,
+            }).then(() => {
+              setStopScan(true);
+            });
+          } else {
+            // La date de visite ne correspond pas à aujourd'hui
+            const formattedDateVisite = dateVisite.toLocaleDateString("fr-FR", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+        
+            Swal.fire({
+              title: "Rendez-vous non accessible",
+              text: `Le rendez-vous est accessible le ${formattedDateVisite}`,
+              icon: "warning",
+              confirmButtonText: "OK",
+            }).then(() => {
+              setStopScan(true);
+            });
+          }
         } else {
           const matchedUser = users.find((user) => user.userId === data);
           if (matchedUser) {
