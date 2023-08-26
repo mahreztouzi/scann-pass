@@ -36,6 +36,7 @@ const SignUpForm = () => {
         const infouser = {
           userId: result.user.uid,
           name: getValues("name"),
+          lastName:getValues("lastName"),
           email: getValues("email"),
           secretCode: getValues("secretCode"),
           immatricule: isChecked
@@ -59,9 +60,7 @@ const SignUpForm = () => {
               window.location.reload();
             });
           })
-          // sendEmailVerification(auth.CurrentUser).them(async()=>{
-          //   alert('cvdfgfgfddf')
-          // })
+        
           .catch((error) => {
             console.log(error.message);
           });
@@ -72,8 +71,6 @@ const SignUpForm = () => {
         alert("email-already-in-use");
       });
 
-    //const handleSubmit = (e) => {
-    //e.preventDefault();
   };
   function handleKeyPress(event) {
     const input = event.target;
@@ -99,10 +96,16 @@ const SignUpForm = () => {
         <span className="fIcon">
           <FontAwesomeIcon icon={faUser} />
         </span>
-        <input
-          placeholder="Nom complet"
+       <div style={{display:'flex', flexDirection:"row"}}>
+       <input
+          placeholder="Nom"
           {...register("name", { required: true })}
         />
+          <input
+          placeholder="Prenom"
+          {...register("lastName", { required: true })}
+        />
+       </div>
       </div>
       <div className="input-field">
         <span className="fIcon">

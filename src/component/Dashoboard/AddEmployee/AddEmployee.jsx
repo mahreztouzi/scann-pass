@@ -94,7 +94,17 @@ const AddEmployee = () => {
                 <strong> Nom :</strong>
                 {user.name}
               </Typography>
-
+              <Typography
+                id="keep-mounted-modal-title"
+                sx={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  textTransform: "uppercase",
+                }}
+              >
+                <strong> Prenom :</strong>
+                {user.lastName}
+              </Typography>
               <Typography
                 id="keep-mounted-modal-title"
                 sx={{

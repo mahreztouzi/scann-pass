@@ -13,6 +13,7 @@ const UserProfile = () => {
   const auth = getAuth();
   const [userId, setUserId] = useState();
   const [username, setUsername] = useState();
+  const [lastName, setLastName] = useState();
   const [mail, setMail] = useState();
   const [immatricule, setImmatricule] = useState();
   const [isTracking, setIsTracking] = useState(false);
@@ -24,6 +25,7 @@ const UserProfile = () => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       const infos = await getDoc(doc(db, "Users", user.uid));
       setUsername(infos.data().name);
+      setLastName(infos.data().lastName);
       setMail(infos.data().email);
       setImmatricule(infos.data().immatricule);
       setUserId(infos.data().userId);
@@ -70,7 +72,10 @@ const UserProfile = () => {
         <h2>Profile</h2>
         <div className="profileInfo">
           <img src={userimg} alt="" />
-          <h3>{username}</h3>
+        <div style={{display:"flex", flexDirection:"row", justifyContent:"center"}}>
+        <h3 style={{marginRight:"3%"}}>{username}</h3>
+          <h3>{lastName}</h3>
+        </div>
           <h5>{mail}</h5>
           <h5>Véhicule : {immatricule} </h5>
           <h1

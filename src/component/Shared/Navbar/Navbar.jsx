@@ -57,7 +57,7 @@ const NavBar = () => {
                         </Nav.Item> */}
             <Nav.Item>
               <Nav.Link href="#contact" className="nav-link">
-                Visiteur
+                Prendre un rendez-vous ?
               </Nav.Link>
             </Nav.Item>
             {/* <Nav.Item>

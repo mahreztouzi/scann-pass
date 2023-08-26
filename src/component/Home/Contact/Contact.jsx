@@ -59,7 +59,7 @@ const Contact = () => {
     }
   };
 
-  
+
 
   // ...Limiter l'heure de la recepetion de service
   const handleTimeChange = (time) => {
@@ -86,6 +86,17 @@ const Contact = () => {
   //  soumission de formulaire de demande d'un visiteur
   const onSubmit = async (e) => {
     e.preventDefault();
+
+    // Vérifiez si la date est vide
+    if (!dateVisite) {
+      Swal.fire({
+        title: "Erreur de date",
+        text: "Veuillez sélectionner une date de visite.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return; // Arrêtez la soumission du formulaire si la date est vide
+    }
 
     const visitorId = generateVisitorId();
 
@@ -160,16 +171,16 @@ const Contact = () => {
   };
 
   useEffect(() => {
-      // créez une requête Firestore pour récupérer les utilisateurs
-      const q = query(collection(db, "visitor"), where("isConfirmedService", "==", true));
+    // créez une requête Firestore pour récupérer les utilisateurs
+    const q = query(collection(db, "visitor"), where("isConfirmedService", "==", true));
 
-        // utilisez onSnapshot pour écouter les changements en temps réel de la collection
+    // utilisez onSnapshot pour écouter les changements en temps réel de la collection
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const dates = querySnapshot.docs.map((doc) => doc.data().dateVisite);
       setExistingDates(dates);
     });
     return unsubscribe;
-  
+
     // const firestore = firebase.firestore();
     // firestore
     //   .collection("visitor")
@@ -344,7 +355,7 @@ const Contact = () => {
                 <Col md={12} lg={12}>
                   {/* Bouton pour ouvrir la modale */}
                   <div onClick={handleOpenModal}>
-                    <input
+                    {/* <input
                       disabled
                       type="text"
                       value={
@@ -355,7 +366,14 @@ const Contact = () => {
                       placeholder="Sélectionner la date et l'heure du rende-vous"
                       className="form-control bg-white  "
                       style={{cursor:"pointer"}}
-                    />
+                    /> */}
+                    <span className="form-control bg-white " style={{ cursor: "pointer", padding: "1rem", marginTop: "1rem" }}>
+                      {
+                        dateVisite && heureVisite
+                          ? `le ${formattedDate} à ${formattedTime}`
+                          : "Sélectionner la date et l'heure du rende-vous"
+                      }
+                    </span>
                   </div>
                   {/* La modale */}
                   <Modal
