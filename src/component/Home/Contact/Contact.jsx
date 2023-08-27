@@ -17,9 +17,11 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  query, where, onSnapshot,
+  query, onSnapshot,
 } from "firebase/firestore";
 import { db } from "../../Login/FirebaseAuth"
+import emailjs from "@emailjs/browser";
+
 const Contact = () => {
   const [personConcerned, setPersonConcerned] = useState("");
   const [name, setName] = useState("");
@@ -36,6 +38,7 @@ const Contact = () => {
   const [existingDates, setExistingDates] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isDateSelected, setIsDateSelected] = useState(false);
+
 
   console.log("existingDates", existingDates)
   // Fonction pour ouvrir la modale
@@ -100,79 +103,110 @@ const Contact = () => {
 
     const visitorId = generateVisitorId();
 
-    const qrCodeData = {
-      personConcerned,
-      name,
-      prenom,
-      email,
-      numberTel,
-      valeurSelectionnee,
-      idnumber,
-      objet,
-      dateVisite: formattedDate,
-      heureVisite: formattedTime,
-      matricule,
-      timestamp: serverTimestamp(),
-      visitorId: visitorId,
-      isConfirmedService: false,
-    };
+    // Générez le code de vérification
+    const generatedCode = generateVerificationCode();
 
-    // // Chiffrer les données avec CryptoJS
-    // const encryptedQrCodeData = CryptoJS.AES.encrypt(
-    //   JSON.stringify(qrCodeData),
-    //   'votre_clé_secrète'
-    // ).toString();
-    // // Supposez que vous avez récupéré les données chiffrées depuis Firebase et les avez stockées dans une variable appelée encryptedData
-    // const encryptedData = encryptedQrCodeData // Remplacez ... par les données chiffrées récupérées depuis Firebase
-
-    // // Déchiffrer les données avec CryptoJS en utilisant la même clé secrète
-    // const bytes = CryptoJS.AES.decrypt(encryptedData, 'votre_clé_secrète');
-    // const decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-    // console.log("decrypted Data", decryptedData);
-    // const Data = {
-    //   personConcerned,
-    //   name,
-    //   prenom,
-    //   email,
-    //   numberTel,
-    //   valeurSelectionnee,
-    //   idnumber,
-    //   objet,
-    //   dateVisite: formattedDate,
-    //   heureVisite: formattedTime,
-    //   matricule,
-    //   timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    //   visitorId: visitorId,
-    //   isConfirmedService: false,
-    //   qrCodeData: encryptedQrCodeData
-    // };
-
-    // Envoyer les données chiffrées dans la base de données Firebase
-    addDoc(collection(db, "visitor"), qrCodeData)
-      .then(() => {
-        console.log(
-          "Données chiffrées enregistrées avec succès dans Firebase !"
-        );
-        Swal.fire({
-          title: "Bravo !",
-          text: "Parfait, votre demande sera traitée dans les meilleures conditions. Une réponse vous sera envoyée par e-mail.",
-          icon: "success",
-          confirmButtonText: "OK",
-        }).then(() => {
-          window.location.reload();
-        });
-      })
-      .catch((error) => {
-        console.error(
-          "Erreur lors de l'enregistrement des données chiffrées :",
-          error
-        );
+    // Envoie de l'email de confirmation avec le code
+    try {
+      await sendConfirmationEmail(email, generatedCode, name);
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'e-mail de confirmation :", error);
+      Swal.fire({
+        title: "Erreur d'envoi d'e-mail",
+        text: "Une erreur s'est produite lors de l'envoi de l'e-mail de confirmation. Veuillez réessayer plus tard.",
+        icon: "error",
+        confirmButtonText: "OK",
       });
+      return; // Arrêtez le reste du traitement si l'e-mail n'a pas pu être envoyé.
+    }
+
+
+    // Attendez la réponse de l'utilisateur (utilisation de SweetAlert)
+   
+    await Swal.fire({
+      title: 'Confirmation de l\'email',
+      html: `Un email de vérification est envoyé à cet addresse : <b>${email} </b>, pour continuer vous devez confirmer votre addresse email`,
+      input: 'number',
+      inputAttributes: {
+        autocapitalize: 'off',
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Confirmer',
+      cancelButtonText: 'Annuler',
+      preConfirm: (verificationCode) => {
+        // Convertir verificationCode en nombre
+        verificationCode = +verificationCode;
+        // Vérifiez si le code saisi correspond au code généré
+        if (verificationCode === +generatedCode) {
+          return true; // La saisie est correcte
+        } else {
+          Swal.showValidationMessage('Code de vérification incorrect');
+          return false; // La saisie est incorrecte
+        }
+      },
+      allowOutsideClick: () => !Swal.isLoading(),
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const qrCodeData = {
+          personConcerned,
+          name,
+          prenom,
+          email,
+          numberTel,
+          valeurSelectionnee,
+          idnumber,
+          objet,
+          dateVisite: formattedDate,
+          heureVisite: formattedTime,
+          matricule,
+          timestamp: serverTimestamp(),
+          visitorId: visitorId,
+          isConfirmedService: false,
+        };
+
+
+
+        // Envoyer les données chiffrées dans la base de données Firebase
+        addDoc(collection(db, "visitor"), qrCodeData)
+          .then(() => {
+            console.log(
+              "Données chiffrées enregistrées avec succès dans Firebase !"
+            );
+            Swal.fire({
+              title: "Bravo !",
+              text: "Parfait, e-mail confirmé et votre demande sera traitée dans les meilleures conditions. Une réponse vous sera envoyée par e-mail.",
+              icon: "success",
+              confirmButtonText: "OK",
+            })
+          })
+          .catch((error) => {
+            console.error(
+              "Erreur lors de l'enregistrement des données chiffrées :",
+              error
+            );
+          });
+        setPersonConcerned("")
+        setName("")
+        setPrenom("")
+        setEmail("")
+        setNumberTel("")
+        setValeurSelectionnee("")
+        setIdnumber("")
+        setObjet("")
+        setDateVisite("")
+        setHeureVisite("")
+        setMatricule("")
+   
+      }
+    });
+
+
+
   };
 
   useEffect(() => {
     // créez une requête Firestore pour récupérer les utilisateurs
-    const q = query(collection(db, "visitor"), where("isConfirmedService", "==", true));
+    const q = query(collection(db, "visitor"));
 
     // utilisez onSnapshot pour écouter les changements en temps réel de la collection
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -225,6 +259,45 @@ const Contact = () => {
 
   // ...
 
+
+  // generation d'un chiffre aleatoire 
+  function generateVerificationCode() {
+    return Math.floor(1000 + Math.random() * 9000); // Génère un nombre aléatoire à 4 chiffres
+  }
+  // fin de la genration de chiffres aleratoier
+
+
+
+  // l'envoi de l'email de confirmation d'email
+  const sendConfirmationEmail = (visitorEmail, message, userName) => {
+    // Vérifiez que l'adresse email du destinataire n'est pas vide
+    if (!visitorEmail) {
+      console.error("Adresse e-mail du destinataire vide.");
+      return;
+    }
+
+    const templateParams = {
+      to_email: visitorEmail, // Spécifiez l'adresse email du destinataire
+      message: message, // Utilisez l'URL réelle du code QR
+      to_name: userName,
+    };
+
+
+    emailjs
+      .send(
+        "service_eqhx6ge",
+        "template_th26x9o",
+        templateParams,
+        "3F92AqhIWky_PI7-9"
+      )
+      .then((response) => {
+        console.log("E-mail envoyé avec succès", response);
+      })
+      .catch((error) => {
+        console.error("Erreur lors de l'envoi de l'e-mail :", error);
+      });
+  };
+  // .. fin email confirmation
   return (
     <section id="contact">
       <Col md={11} className="mx-auto">
