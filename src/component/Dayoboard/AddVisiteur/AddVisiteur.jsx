@@ -132,17 +132,17 @@ const AddVisiteur = () => {
     }
   };
 
-  useEffect(() => {
-    // Récupérer les URL des codes QR pour chaque visiteur
-    const getQRCodeURLs = async () => {
-      const qrCodeURLsObj = {};
-      for (const user of visitor) {
-        const qrCodeURL = await fetchQRCode(user.id);
-        qrCodeURLsObj[user.id] = qrCodeURL;
-      }
-    };
-    getQRCodeURLs();
-  }, [visitor]);
+  // useEffect(() => {
+  //   // Récupérer les URL des codes QR pour chaque visiteur
+  //   const getQRCodeURLs = async () => {
+  //     const qrCodeURLsObj = {};
+  //     for (const user of visitor) {
+  //       const qrCodeURL = await fetchQRCode(user.id);
+  //       qrCodeURLsObj[user.id] = qrCodeURL;
+  //     }
+  //   };
+  //   getQRCodeURLs();
+  // }, [visitor]);
 
   // l'envoi de l'email
   const sendEmail = (visitorEmail, qrCodeImageURL, userName) => {
@@ -199,6 +199,7 @@ const AddVisiteur = () => {
         console.error("Erreur lors de l'envoi de l'e-mail :", error);
       });
   };
+ 
   return (
     <div className="px-2">
       <Container>
@@ -275,7 +276,7 @@ const AddVisiteur = () => {
                     wordWrap: "break-word",
                   }}
                 >
-                  <strong> numero de telephone:</strong> {user.numberTel}
+                  <strong> numero de telephone : </strong> {user.numberTel}
                 </Typography>
                 <Typography
                   sx={{
@@ -313,6 +314,30 @@ const AddVisiteur = () => {
                   {user.personConcerned
                     ? user.personConcerned
                     : " Visiteur externe"}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: "400",
+                    fontFamily: "PT Serif",
+                    width: "100%",
+                    wordWrap: "break-word",
+                  }}
+                >
+                 
+                  {user.partenaire
+                    ? ( <div>
+                       <strong> Partenaire :</strong>  oui  <br/>
+                       <strong> Nom du partenaire :</strong>  {user.partenaire[0]} <br/>
+                       <strong> Identité du Partenaire :</strong>  {user.partenaire[1]}
+
+                    </div>  ) 
+                    :  ( <div>
+                      <strong> Partenaire :</strong>  non  <br/>
+                      <strong> Nom du partenaire : /</strong>   <br/>
+                       <strong> Identité du Partenaire : /</strong>  
+
+                   </div>  ) }
                 </Typography>
                 <Typography
                   sx={{

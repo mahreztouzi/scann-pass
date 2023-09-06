@@ -22,6 +22,7 @@ import {
 import { db } from "../../Login/FirebaseAuth"
 import emailjs from "@emailjs/browser";
 
+
 const Contact = () => {
   const [personConcerned, setPersonConcerned] = useState("");
   const [name, setName] = useState("");
@@ -38,6 +39,9 @@ const Contact = () => {
   const [existingDates, setExistingDates] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isDateSelected, setIsDateSelected] = useState(false);
+  const [partenairName, setPartenairName] = useState("");
+  const [partenairIdentité, setPartenairIdentité] = useState();
+
 
 
   console.log("existingDates", existingDates)
@@ -122,7 +126,7 @@ const Contact = () => {
 
 
     // Attendez la réponse de l'utilisateur (utilisation de SweetAlert)
-   
+
     await Swal.fire({
       title: 'Confirmation de l\'email',
       html: `Un email de vérification est envoyé à cet addresse : <b>${email} </b>, pour continuer vous devez confirmer votre addresse email`,
@@ -131,6 +135,7 @@ const Contact = () => {
         autocapitalize: 'off',
       },
       showCancelButton: true,
+      allowOutsideClick: false,
       confirmButtonText: 'Confirmer',
       cancelButtonText: 'Annuler',
       preConfirm: (verificationCode) => {
@@ -144,10 +149,12 @@ const Contact = () => {
           return false; // La saisie est incorrecte
         }
       },
-      allowOutsideClick: () => !Swal.isLoading(),
+  
     }).then((result) => {
       if (result.isConfirmed) {
+        const partenaire = partenairName || partenairIdentité ?  [partenairName, partenairIdentité ] : "visiteur seule";
         const qrCodeData = {
+          partenaire,
           personConcerned,
           name,
           prenom,
@@ -196,7 +203,7 @@ const Contact = () => {
         setDateVisite("")
         setHeureVisite("")
         setMatricule("")
-   
+
       }
     });
 
@@ -298,6 +305,52 @@ const Contact = () => {
       });
   };
   // .. fin email confirmation
+
+  const handleAcoompagne = () => {
+    Swal.fire({
+      title: 'Accompagné ?',
+      text: 'Le jour de votre rendez-vous vous êtes accompagné ?',
+      icon: 'warning',
+      allowOutsideClick: false,
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Oui',
+      cancelButtonText: 'Non',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: 'Entrer les informations de votre partenaire',
+          allowOutsideClick: false,
+          html:
+
+            '<input id="swal-input1" type="text" class="swal2-input" placeholder="Nom complet" required>' +
+            '<input id="swal-input2" type="number" class="swal2-input" placeholder="Numéro d\'identité" required>',
+          inputAttributes: {
+            autocapitalize: 'off',
+          },
+          showCancelButton: true,
+          confirmButtonText: 'Confirmer',
+          cancelButtonText:"Annuler",
+          showLoaderOnConfirm: true,
+          preConfirm: () => {
+            const nomComplet = document.getElementById('swal-input1').value;
+            const numeroIdentite = document.getElementById('swal-input2').value;
+
+            if (!nomComplet || !numeroIdentite) {
+              Swal.showValidationMessage('Veuillez remplir tous les champs obligatoires.');
+            }
+            return [
+              setPartenairName(document.getElementById('swal-input1').value),
+              setPartenairIdentité(document.getElementById('swal-input2').value)
+            ]
+          }
+        });
+      }
+    });
+  };
+  console.log(partenairIdentité, "partenaire")
+  // ...
   return (
     <section id="contact">
       <Col md={11} className="mx-auto">
@@ -397,30 +450,37 @@ const Contact = () => {
                   </div>
                 </Col>
                 <Col md={6} lg={6}>
-                  <label className="m-2">Je suis ?</label>
+
                   <select
                     value={personConcerned}
-                    onChange={(e) => setPersonConcerned(e.target.value)}
-                    className="form-control"
+
+                    onChange={(e) => {
+                      setPersonConcerned(e.target.value)
+                      if (e.target.value === "visiteur Externe" || e.target.value === "visiteur Interne") {
+                        handleAcoompagne();
+                      }
+                    }}
+                    className="form-control mt-2 p-3"
                   >
-                    <option value="visiteur Externe">Visiteur Externe</option>
-                    <option value="visiteur Interne">Visiteur Interne</option>
-                    <option value="visteur Normal">Visiteur Normal</option>
-                    {/* Add more options as needed */}
+                    <option>Je suis ?</option>
+                    <option value="visiteur Externe" style={{ fontWeight: "bold" }} >Visiteur Externe</option>
+                    <option value="visiteur Interne" style={{ fontWeight: "bold" }} >Visiteur Interne</option>
                   </select>
                 </Col>
+
                 <Col md={6} lg={6}>
-                  <label className=" m-2">Sélectionnez un service</label>
+
                   <select
                     value={valeurSelectionnee}
                     onChange={(e) => setValeurSelectionnee(e.target.value)}
-                    className="form-control"
+                    className="form-control mt-2 p-3"
                   >
-                    <option value="service général">Service général</option>
-                    <option value="service d'hébergement">
+                    <option > Sélectionnez un service ?</option>
+                    <option value="service général" style={{ fontWeight: "bold" }}>Service général</option>
+                    <option value="service d'hébergement" style={{ fontWeight: "bold" }}>
                       Service d'hébergement
                     </option>
-                    <option value="service de transport">
+                    <option value="service de transport" style={{ fontWeight: "bold" }}>
                       Service de transport
                     </option>
                   </select>

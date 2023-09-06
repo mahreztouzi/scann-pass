@@ -181,7 +181,7 @@ const AgentInterface = () => {
             footer: `<b>VISITEUR : </b>  ${
               matchedVisitorMatricule.personConcerned
                 ? matchedVisitorMatricule.personConcerned
-                : "visiteur normal"
+                : "visiteur externe"
             }`,
           });
         } else {
