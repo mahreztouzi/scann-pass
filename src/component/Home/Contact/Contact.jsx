@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Col, Row, Button, Modal } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Contact.css";
@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../Login/FirebaseAuth"
 import emailjs from "@emailjs/browser";
+import Webcam from "react-webcam";
 
 
 const Contact = () => {
@@ -41,7 +42,9 @@ const Contact = () => {
   const [isDateSelected, setIsDateSelected] = useState(false);
   const [partenairName, setPartenairName] = useState("");
   const [partenairIdentité, setPartenairIdentité] = useState();
-
+  const webcamRef = useRef(null);
+  const [imgSrc, setImgSrc] = useState(null);
+  const [showModalPhoto, setShowModalPhoto] = useState(true)
 
 
   console.log("existingDates", existingDates)
@@ -50,9 +53,17 @@ const Contact = () => {
     setShowModal(true);
   };
 
+  const handleOpenModalPhoto = () => {
+    setShowModalPhoto(true);
+  };
+
   // Fonction pour fermer la modale
   const handleCloseModal = () => {
     setShowModal(false);
+  };
+
+  const handleCloseModalPhoto = () => {
+    setShowModalPhoto(false);
   };
 
   const handleKeyPress = (event) => {
@@ -149,10 +160,10 @@ const Contact = () => {
           return false; // La saisie est incorrecte
         }
       },
-  
+
     }).then((result) => {
       if (result.isConfirmed) {
-        const partenaire = partenairName || partenairIdentité ?  [partenairName, partenairIdentité ] : "visiteur seule";
+        const partenaire = partenairName || partenairIdentité ? [partenairName, partenairIdentité] : "visiteur seule";
         const qrCodeData = {
           partenaire,
           personConcerned,
@@ -331,7 +342,7 @@ const Contact = () => {
           },
           showCancelButton: true,
           confirmButtonText: 'Confirmer',
-          cancelButtonText:"Annuler",
+          cancelButtonText: "Annuler",
           showLoaderOnConfirm: true,
           preConfirm: () => {
             const nomComplet = document.getElementById('swal-input1').value;
@@ -349,8 +360,16 @@ const Contact = () => {
       }
     });
   };
-  console.log(partenairIdentité, "partenaire")
   // ...
+
+  // *** prendre une photo ***
+
+
+  const capture = useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setImgSrc(imageSrc);
+  }, [webcamRef, setImgSrc]);
+  // *** fin prendre photo
   return (
     <section id="contact">
       <Col md={11} className="mx-auto">
@@ -576,6 +595,48 @@ const Contact = () => {
                       <Button onClick={handleCloseModal}>Fermer</Button>
                     </Modal.Footer>
                   </Modal>
+                  {/* modal capture de photo */}
+                  <Modal
+                    show={showModalPhoto}
+                    onHide={handleCloseModalPhoto}
+                    size="md"
+                    aria-labelledby="contained-modal-title-vcenter"
+                    centered
+
+                  >
+                    <Modal.Header closeButton>
+                      <Modal.Title>
+                        Prendre une photo
+                      </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body style={{textAlign:"center"}}>
+
+                      {imgSrc ? (
+                      <>
+                        <img
+                            style={{ width: "100%", height: "300px" }}
+                          src={imgSrc}
+                          alt="img"
+                        />
+                         <Button onClick={()=>{setImgSrc(null)}} className="btn-secondary mt-3">Prendre une autre photo</Button>
+                      </>
+                      ) : (<>
+                      <Webcam
+                        style={{ width: "100%", height: "300px",   borderRadius:"" }}
+                        audio={false}
+                        ref={webcamRef}
+                        screenshotFormat="image/jpeg"
+                      />
+                      <Button onClick={capture} className="btn-success mt-3 ">Capture photo</Button>
+                      </>
+                      )}
+                    </Modal.Body>
+                    <Modal.Footer>
+                      {/* Bouton pour fermer la modale */}
+                      <Button onClick={handleCloseModalPhoto} className="btn-primary">Confirmer</Button>
+                    </Modal.Footer>
+                  </Modal>
+                  {/* fin modal de capture de photo */}
                 </Col>
                 <Col md={12}>
                   <textarea
