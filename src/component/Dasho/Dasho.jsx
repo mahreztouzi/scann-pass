@@ -42,7 +42,7 @@ const AgentInterface = () => {
               title: "Autorisée !",
               html: `Bienvenue <b> monsieur :</b> ${matchedVisitor.name}, <b> vehicule :</b>  ${
                 matchedVisitor.matricule ? matchedVisitor.matricule : "sans vehicule"
-              } `+`<b>Partenaire :</b> ${matchedVisitor.partenaire !== 'visiteur seule' ? `Nom  : ${matchedVisitor.partenaire[0]}, identité : ${matchedVisitor.partenaire[1]}` : `${matchedVisitor.partenaire }` }`,
+              } ``<b>Partenaire :</b> ${matchedVisitor.partenaire !== 'visiteur seule' ? `Nom  : ${matchedVisitor.partenaire[0]}, identité : ${matchedVisitor.partenaire[1]}` : `${matchedVisitor.partenaire }` }`,
               icon: "success",
               imageUrl: `${matchedVisitor.imgUrl && matchedVisitor.imgUrl  }`,
               imageHeight: 180,

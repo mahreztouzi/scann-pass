@@ -2,15 +2,16 @@
     box-shadow: 0 2px 5px 1px rgb(64 60 67 / 16%);
     background: #fff;
     text-align: center;
-    margin: 2.5rem auto;
+    margin: 0 auto;
     border-radius: 0.3rem;
     max-width: 500px;
+ 
 }
 
 .profile h2 {
     font-size: 35px;
     font-weight: 500;
-    padding: 0.5rem 0;
+    padding: 0.1rem 0;
     margin-bottom: 0;
     background-color: #EFF2F7;
 }
@@ -19,7 +20,7 @@
     height: 120px;
     width: 120px;
     border-radius: 50%;
-    margin: 1rem 0;
+  
 }
 
 .profile h3 {
@@ -32,9 +33,7 @@
     color: rgba(0,0,0,.7);
 }
 
-.profileInfo {
-    padding: 1.3rem;
-}
+
 
 .mainBtn {
     background: #7355F7;
@@ -49,6 +48,7 @@
     color: #fff;
     transition: 0.4s;
     cursor: pointer;
+    margin-bottom: 5px;
 }
 .mainBtn:hover {
     background-color: #4C25F5;

@@ -54,13 +54,14 @@ const VisiteurListe = () => {
                 width: "100%",
                 marginTop: "1%",
                 marginBottom: "1%",
-                textAlign:"center",
+          
               }}
             >
              
               {todayVisitor ? (
-                <div style={{   backgroundColor:"#60FF39", width:"100%",height:"100%",  padding: "5px",  borderRadius: "15px", boxShadow: "0 0 10px rgba(0,0,0,0.2)",}}>
-                   <Typography
+                <div style={{   backgroundColor:"#FFA85A", width:"70%",height:"100%",  padding: "8px",  borderRadius: "15px", boxShadow: "0 0 10px rgba(0,0,0,0.2)",display:"flex",justifyContent:"space-between", alignContent:"center"}}>
+                <div>
+                <Typography
                 variant="h5"
                 sx={{
                   fontSize: "20px",
@@ -78,7 +79,7 @@ const VisiteurListe = () => {
                       fontFamily: "PT Serif",
                       width: "100%",
                       wordWrap: "break-word",
-                      color: "#2150FC",
+                      color: "#2E5EB8",
                     }}
                   >
                     <strong> Date et l'heure du rendez-vous :</strong>{" "}
@@ -125,6 +126,8 @@ const VisiteurListe = () => {
                   >
                     <strong>Véhicule :</strong> {todayVisitor.matricule ? todayVisitor.matricule : "sans véhicule"}
                   </Typography>
+                </div>
+                <img src={todayVisitor.imgUrl} style={{width:"28%", borderRadius:"10px",boxShadow:"0 0 10px #555"}} alt="photoVisitor" />
                 </div>
               ) : (
                 <Typography sx={{color:"#CA6308", fontSize:"22px", fontWeight:"600"}}>Aucun visiteur pour aujourd'hui.</Typography>
