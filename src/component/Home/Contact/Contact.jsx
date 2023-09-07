@@ -19,7 +19,8 @@ import {
   serverTimestamp,
   query, onSnapshot,
 } from "firebase/firestore";
-import { db } from "../../Login/FirebaseAuth"
+import { db, storage } from "../../Login/FirebaseAuth";
+import { ref, uploadBytes,getDownloadURL } from "firebase/storage";
 import emailjs from "@emailjs/browser";
 import Webcam from "react-webcam";
 
@@ -44,8 +45,10 @@ const Contact = () => {
   const [partenairIdentité, setPartenairIdentité] = useState();
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
-  const [showModalPhoto, setShowModalPhoto] = useState(true)
-
+  const [showModalPhoto, setShowModalPhoto] = useState(false)
+  const [uploadVisitorId, setUploadVisitorId] = useState()
+  const [isPhotoCaptured, setIsPhotoCaptured] = useState(false);
+  const [imgUrl, setImgUrl] = useState()
 
   console.log("existingDates", existingDates)
   // Fonction pour ouvrir la modale
@@ -53,9 +56,6 @@ const Contact = () => {
     setShowModal(true);
   };
 
-  const handleOpenModalPhoto = () => {
-    setShowModalPhoto(true);
-  };
 
   // Fonction pour fermer la modale
   const handleCloseModal = () => {
@@ -103,13 +103,13 @@ const Contact = () => {
 
   //  soumission de formulaire de demande d'un visiteur
   const onSubmit = async (e) => {
-    e.preventDefault();
+    e && e.preventDefault();
 
     // Vérifiez si la date est vide
-    if (!dateVisite) {
+    if (!dateVisite || !personConcerned || !valeurSelectionnee) {
       Swal.fire({
         title: "Erreur de date",
-        text: "Veuillez sélectionner une date de visite.",
+        text: "Veuillez remplir tout les champs s'il vous plait !.",
         icon: "error",
         confirmButtonText: "OK",
       });
@@ -117,9 +117,18 @@ const Contact = () => {
     }
 
     const visitorId = generateVisitorId();
+    setUploadVisitorId(visitorId)
 
     // Générez le code de vérification
     const generatedCode = generateVerificationCode();
+
+    if (!isPhotoCaptured) {
+      // Si la photo n'est pas encore capturée, ouvrez la modale pour la capture
+      setShowModalPhoto(true);
+      return
+    }
+
+
 
     // Envoie de l'email de confirmation avec le code
     try {
@@ -154,6 +163,8 @@ const Contact = () => {
         verificationCode = +verificationCode;
         // Vérifiez si le code saisi correspond au code généré
         if (verificationCode === +generatedCode) {
+
+
           return true; // La saisie est correcte
         } else {
           Swal.showValidationMessage('Code de vérification incorrect');
@@ -180,6 +191,7 @@ const Contact = () => {
           timestamp: serverTimestamp(),
           visitorId: visitorId,
           isConfirmedService: false,
+          imgUrl
         };
 
 
@@ -214,6 +226,7 @@ const Contact = () => {
         setDateVisite("")
         setHeureVisite("")
         setMatricule("")
+        setImgUrl()
 
       }
     });
@@ -309,7 +322,6 @@ const Contact = () => {
         "3F92AqhIWky_PI7-9"
       )
       .then((response) => {
-        console.log("E-mail envoyé avec succès", response);
       })
       .catch((error) => {
         console.error("Erreur lors de l'envoi de l'e-mail :", error);
@@ -363,13 +375,57 @@ const Contact = () => {
   // ...
 
   // *** prendre une photo ***
-
-
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current.getScreenshot();
     setImgSrc(imageSrc);
   }, [webcamRef, setImgSrc]);
   // *** fin prendre photo
+
+  // *** envoyer l'image a storage 
+  const uploadImageToStorage = async (userId, imageCapture) => {
+    try {
+      setShowModalPhoto(true);
+      // Créez une référence unique pour l'image en utilisant l'ID de l'utilisateur
+      const storageRef = ref(storage, `capturedImage/${userId}.jpeg`);
+
+      // Convertissez la capture d'image en blob
+      const blob = dataURLtoBlob(imageCapture);
+
+      // Téléchargez le blob dans Firebase Storage en utilisant uploadBytes
+      const snapshot =  await uploadBytes(storageRef, blob);
+        // Une fois le téléchargement terminé, vous pouvez obtenir l'URL de l'image
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      setImgUrl(downloadURL);
+      handleCloseModalPhoto()
+      setIsPhotoCaptured(true)
+      await onSubmit();
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  // Fonction pour convertir une data URL en blob
+  function dataURLtoBlob(dataURL) {
+    // Vérifiez si dataURL est défini et non null
+    if (!dataURL) {
+      return null;
+    }
+
+    const byteString = atob(dataURL.split(',')[1]);
+    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+
+    return new Blob([ab], { type: mimeString });
+  }
+
+  // *** fin image storage 
   return (
     <section id="contact">
       <Col md={11} className="mx-auto">
@@ -609,31 +665,31 @@ const Contact = () => {
                         Prendre une photo
                       </Modal.Title>
                     </Modal.Header>
-                    <Modal.Body style={{textAlign:"center"}}>
+                    <Modal.Body style={{ textAlign: "center" }}>
 
                       {imgSrc ? (
-                      <>
-                        <img
+                        <>
+                          <img
                             style={{ width: "100%", height: "300px" }}
-                          src={imgSrc}
-                          alt="img"
-                        />
-                         <Button onClick={()=>{setImgSrc(null)}} className="btn-secondary mt-3">Prendre une autre photo</Button>
-                      </>
+                            src={imgSrc}
+                            alt="img"
+                          />
+                          <Button onClick={() => { setImgSrc(null) }} className="btn-secondary mt-3">Prendre une autre photo</Button>
+                        </>
                       ) : (<>
-                      <Webcam
-                        style={{ width: "100%", height: "300px",   borderRadius:"" }}
-                        audio={false}
-                        ref={webcamRef}
-                        screenshotFormat="image/jpeg"
-                      />
-                      <Button onClick={capture} className="btn-success mt-3 ">Capture photo</Button>
+                        <Webcam
+                          style={{ width: "100%", height: "300px", borderRadius: "" }}
+                          audio={false}
+                          ref={webcamRef}
+                          screenshotFormat="image/jpeg"
+                        />
+                        <Button onClick={capture} className="btn-success mt-3 ">Capture photo</Button>
                       </>
                       )}
                     </Modal.Body>
                     <Modal.Footer>
                       {/* Bouton pour fermer la modale */}
-                      <Button onClick={handleCloseModalPhoto} className="btn-primary">Confirmer</Button>
+                      <Button onClick={() => uploadImageToStorage(uploadVisitorId, imgSrc)} className="btn-primary">Confirmer</Button>
                     </Modal.Footer>
                   </Modal>
                   {/* fin modal de capture de photo */}

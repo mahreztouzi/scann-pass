@@ -42,13 +42,17 @@ const AgentInterface = () => {
               title: "Autorisée !",
               html: `Bienvenue <b> monsieur :</b> ${matchedVisitor.name}, <b> vehicule :</b>  ${
                 matchedVisitor.matricule ? matchedVisitor.matricule : "sans vehicule"
-              } `,
+              } `+`<b>Partenaire :</b> ${matchedVisitor.partenaire !== 'visiteur seule' ? `Nom  : ${matchedVisitor.partenaire[0]}, identité : ${matchedVisitor.partenaire[1]}` : `${matchedVisitor.partenaire }` }`,
               icon: "success",
+              imageUrl: `${matchedVisitor.imgUrl && matchedVisitor.imgUrl  }`,
+              imageHeight: 180,
+              imageAlt: 'imgVisiteur',
+           
               confirmButtonText: "OK",
-              footer: `<b>VISITEUR  </b>  ${
+              footer: `<b>VISITEUR &nbsp; </b>  ${
                 matchedVisitor.personConcerned
                   ? matchedVisitor.personConcerned
-                  : " _visiteur externe"
+                  : "  visiteur externe"
               }`,
             }).then(() => {
               setStopScan(true);

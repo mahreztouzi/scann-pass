@@ -132,6 +132,7 @@ const AddVisiteur = () => {
     }
   };
 
+
   // useEffect(() => {
   //   // Récupérer les URL des codes QR pour chaque visiteur
   //   const getQRCodeURLs = async () => {
@@ -218,18 +219,39 @@ const AddVisiteur = () => {
                   borderRadius: "15px",
                   boxShadow: "0 0 10px rgba(0,0,0,0.2)",
                   padding: "4%",
+
                 }}
               >
-                <Typography
-                  sx={{
-                    fontSize: "15px",
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    marginBottom: "3%",
-                  }}
+                <Box
+                  sx={{ width: "100%", display: "flex", justifyContent: "space-between", textAlign: "start",      
+                  borderRadius: "10px",
+                 
+                  overflow: "hidden", }}
                 >
-                  <strong> Nom et prenom :</strong> {user.name} {user.prenom}
-                </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: "16px",
+                      fontWeight: "800",
+                      textTransform: "uppercase",
+                      marginTop: "3%",
+                      marginBottom: "3%"
+               
+                    }}
+                  >
+                    <strong> Nom  :</strong> {user.name} <br />
+                    <strong> Prenom :</strong>  {user.prenom}
+                  </Typography>
+                  <img src={user.imgUrl && user.imgUrl}
+                    style={{
+                      height: "28%",
+                      width: "35%",
+                      borderRadius:"10px"
+                     
+                    }}
+                    alt="photoVisiteur"
+                  />
+                </Box>
 
                 <Typography
                   sx={{
@@ -324,20 +346,20 @@ const AddVisiteur = () => {
                     wordWrap: "break-word",
                   }}
                 >
-                 
+
                   {user.partenaire
-                    ? ( <div>
-                       <strong> Partenaire :</strong>  oui  <br/>
-                       <strong> Nom du partenaire :</strong>  {user.partenaire[0]} <br/>
-                       <strong> Identité du Partenaire :</strong>  {user.partenaire[1]}
+                    ? (<div>
+                      <strong> Partenaire :</strong>  oui  <br />
+                      <strong> Nom du partenaire :</strong>  {user.partenaire[0]} <br />
+                      <strong> Identité du Partenaire :</strong>  {user.partenaire[1]}
 
-                    </div>  ) 
-                    :  ( <div>
-                      <strong> Partenaire :</strong>  non  <br/>
-                      <strong> Nom du partenaire : /</strong>   <br/>
-                       <strong> Identité du Partenaire : /</strong>  
+                    </div>)
+                    : (<div>
+                      <strong> Partenaire :</strong>  non  <br />
+                      <strong> Nom du partenaire : /</strong>   <br />
+                      <strong> Identité du Partenaire : /</strong>
 
-                   </div>  ) }
+                    </div>)}
                 </Typography>
                 <Typography
                   sx={{
