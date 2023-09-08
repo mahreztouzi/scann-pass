@@ -9,11 +9,13 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
-
-import { db } from "../Login/FirebaseAuth";
+import { ref, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../Login/FirebaseAuth";
 import Swal from "sweetalert2";
 import { Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import userimg from "../../Assets/user.svg";
+
 
 const AgentInterface = () => {
   const [visitor, setVisitor] = useState([]);
@@ -22,10 +24,11 @@ const AgentInterface = () => {
   const [immatriculation, setImmatriculation] = useState("");
 
   //  tester les données de code Qr avec les données visiteur ou employee
-  const handleScan = (data) => {
+  const handleScan = async (data) => {
     if (data) {
-      setStopScan(false);
 
+      setStopScan(false);
+      
       // Comparer les données du code QR avec les données des visiteurs
       if (visitor || users) {
         const matchedVisitor = visitor.find(
@@ -34,26 +37,24 @@ const AgentInterface = () => {
         if (matchedVisitor) {
           const today = new Date();
           const dateVisite = new Date(matchedVisitor.dateVisite);
-        
+
           if (dateVisite.toDateString() === today.toDateString()) {
             // La date de visite correspond à aujourd'hui
             console.log("Visiteur trouvé:", matchedVisitor);
             Swal.fire({
               title: "Autorisée !",
-              html: `Bienvenue <b> monsieur :</b> ${matchedVisitor.name}, <b> vehicule :</b>  ${
-                matchedVisitor.matricule ? matchedVisitor.matricule : "sans vehicule"
-              } ``<b>Partenaire :</b> ${matchedVisitor.partenaire !== 'visiteur seule' ? `Nom  : ${matchedVisitor.partenaire[0]}, identité : ${matchedVisitor.partenaire[1]}` : `${matchedVisitor.partenaire }` }`,
+              html: `Bienvenue <b> monsieur :</b> ${matchedVisitor.name}, <b> vehicule :</b>  ${matchedVisitor.matricule ? matchedVisitor.matricule : "sans vehicule"
+                } ``<b>Partenaire :</b> ${matchedVisitor.partenaire !== 'visiteur seule' ? `Nom  : ${matchedVisitor.partenaire[0]}, identité : ${matchedVisitor.partenaire[1]}` : `${matchedVisitor.partenaire}`}`,
               icon: "success",
-              imageUrl: `${matchedVisitor.imgUrl && matchedVisitor.imgUrl  }`,
+              imageUrl: `${matchedVisitor.imgUrl && matchedVisitor.imgUrl}`,
               imageHeight: 180,
               imageAlt: 'imgVisiteur',
-           
+
               confirmButtonText: "OK",
-              footer: `<b>VISITEUR &nbsp; </b>  ${
-                matchedVisitor.personConcerned
-                  ? matchedVisitor.personConcerned
-                  : "  visiteur externe"
-              }`,
+              footer: `<b>VISITEUR &nbsp; </b>  ${matchedVisitor.personConcerned
+                ? matchedVisitor.personConcerned
+                : "  visiteur externe"
+                }`,
             }).then(() => {
               setStopScan(true);
             });
@@ -65,7 +66,7 @@ const AgentInterface = () => {
               month: "long",
               day: "numeric",
             });
-        
+
             Swal.fire({
               title: "Rendez-vous non accessible",
               text: `Le rendez-vous est accessible le ${formattedDateVisite}`,
@@ -78,17 +79,19 @@ const AgentInterface = () => {
         } else {
           const matchedUser = users.find((user) => user.userId === data);
           if (matchedUser) {
+           const imgUrl= await fetchImgEmploye(matchedUser.userId);
             // Faites ce que vous voulez avec le visiteur correspondant trouvé
             console.log("user trouvé:", matchedUser);
             Swal.fire({
               title: "Autorisé !",
-              html: `Bienvenue <b> monsieur :</b> ${
-                matchedUser.name
-              }, <b> vehicule :</b>  ${
-                matchedUser.immatricule
+              html: `Bienvenue <b> monsieur :</b> ${matchedUser.name
+                }, <b> vehicule :</b>  ${matchedUser.immatricule
                   ? matchedUser.immatricule
                   : "sans vehicule"
-              } `,
+                } `,
+              imageUrl: `${imgUrl ? imgUrl : userimg}`,
+              imageHeight: 180,
+              imageAlt: 'imgVisiteur',
               icon: "success",
               confirmButtonText: "OK",
               footer: `<b>EMPLOYEE</b> `,
@@ -182,11 +185,10 @@ const AgentInterface = () => {
             html: ` <b> vehicule de monsieur : </b>  ${matchedVisitorMatricule.name} `,
             icon: "success",
             confirmButtonText: "OK",
-            footer: `<b>VISITEUR : </b>  ${
-              matchedVisitorMatricule.personConcerned
-                ? matchedVisitorMatricule.personConcerned
-                : "visiteur externe"
-            }`,
+            footer: `<b>VISITEUR : </b>  ${matchedVisitorMatricule.personConcerned
+              ? matchedVisitorMatricule.personConcerned
+              : "visiteur externe"
+              }`,
           });
         } else {
           const matchedUserMatricule = users.find(
@@ -252,7 +254,7 @@ const AgentInterface = () => {
       const signalData = {
         reportText,
         immatriculation,
-        timestamp:serverTimestamp(),
+        timestamp: serverTimestamp(),
       };
 
       // Par exemple, si vous avez une collection "reports" dans votre base de données Firebase :
@@ -264,6 +266,17 @@ const AgentInterface = () => {
         `Erreur lors de l'enregistrement du signalement : ${error.message}`
       );
       return false; // Retourner false pour indiquer que le signalement a échoué
+    }
+  };
+
+  const fetchImgEmploye = async (visitorId) => {
+    try {
+      const imgUserRef = ref(storage, `userImg/${visitorId}.jpeg`);
+      const imgUser = await getDownloadURL(imgUserRef);
+      return imgUser;
+    } catch (error) {
+      console.error("Erreur lors de la récupération du code QR :", error);
+
     }
   };
   return (

@@ -20,9 +20,11 @@ import {
   query, onSnapshot,
 } from "firebase/firestore";
 import { db, storage } from "../../Login/FirebaseAuth";
-import { ref, uploadBytes,getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import emailjs from "@emailjs/browser";
 import Webcam from "react-webcam";
+import Loader from "react-loader-spinner";
+import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 
 
 const Contact = () => {
@@ -47,8 +49,8 @@ const Contact = () => {
   const [imgSrc, setImgSrc] = useState(null);
   const [showModalPhoto, setShowModalPhoto] = useState(false)
   const [uploadVisitorId, setUploadVisitorId] = useState()
-  const [isPhotoCaptured, setIsPhotoCaptured] = useState(false);
   const [imgUrl, setImgUrl] = useState()
+  const [loading, setLoading] = useState(false);
 
   console.log("existingDates", existingDates)
   // Fonction pour ouvrir la modale
@@ -64,6 +66,7 @@ const Contact = () => {
 
   const handleCloseModalPhoto = () => {
     setShowModalPhoto(false);
+    onSubmit();
   };
 
   const handleKeyPress = (event) => {
@@ -122,7 +125,7 @@ const Contact = () => {
     // Générez le code de vérification
     const generatedCode = generateVerificationCode();
 
-    if (!isPhotoCaptured) {
+    if (!imgSrc) {
       // Si la photo n'est pas encore capturée, ouvrez la modale pour la capture
       setShowModalPhoto(true);
       return
@@ -384,7 +387,7 @@ const Contact = () => {
   // *** envoyer l'image a storage 
   const uploadImageToStorage = async (userId, imageCapture) => {
     try {
-      setShowModalPhoto(true);
+      setLoading(true);
       // Créez une référence unique pour l'image en utilisant l'ID de l'utilisateur
       const storageRef = ref(storage, `capturedImage/${userId}.jpeg`);
 
@@ -392,13 +395,13 @@ const Contact = () => {
       const blob = dataURLtoBlob(imageCapture);
 
       // Téléchargez le blob dans Firebase Storage en utilisant uploadBytes
-      const snapshot =  await uploadBytes(storageRef, blob);
-        // Une fois le téléchargement terminé, vous pouvez obtenir l'URL de l'image
+      const snapshot = await uploadBytes(storageRef, blob);
+      // Une fois le téléchargement terminé, vous pouvez obtenir l'URL de l'image
       const downloadURL = await getDownloadURL(snapshot.ref);
       setImgUrl(downloadURL);
+      onSubmit();
       handleCloseModalPhoto()
-      setIsPhotoCaptured(true)
-      await onSubmit();
+      setLoading(false);
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
@@ -590,6 +593,7 @@ const Contact = () => {
                     size="lg"
                     aria-labelledby="contained-modal-title-vcenter"
                     centered
+                    backdrop="static"
                   >
                     <Modal.Header closeButton>
                       <Modal.Title>
@@ -658,7 +662,7 @@ const Contact = () => {
                     size="md"
                     aria-labelledby="contained-modal-title-vcenter"
                     centered
-
+                    backdrop="static"
                   >
                     <Modal.Header closeButton>
                       <Modal.Title>
@@ -666,8 +670,9 @@ const Contact = () => {
                       </Modal.Title>
                     </Modal.Header>
                     <Modal.Body style={{ textAlign: "center" }}>
-
-                      {imgSrc ? (
+                      {loading ? (
+                        <Loader type="ThreeDots" color="#00BFFF" height={90} width={90} style={{ marginTop: "30%" }} />
+                      ) : imgSrc ? (
                         <>
                           <img
                             style={{ width: "100%", height: "300px" }}
@@ -683,13 +688,13 @@ const Contact = () => {
                           ref={webcamRef}
                           screenshotFormat="image/jpeg"
                         />
-                        <Button onClick={capture} className="btn-success mt-3 ">Capture photo</Button>
+                        <Button onClick={capture} className="btn-success mt-3 ">Capture</Button>
                       </>
                       )}
                     </Modal.Body>
                     <Modal.Footer>
                       {/* Bouton pour fermer la modale */}
-                      <Button onClick={() => uploadImageToStorage(uploadVisitorId, imgSrc)} className="btn-primary">Confirmer</Button>
+                      <Button onClick={() => uploadImageToStorage(uploadVisitorId, imgSrc)} className="btn-primary" disabled={loading || !imgSrc}>Confirmer</Button>
                     </Modal.Footer>
                   </Modal>
                   {/* fin modal de capture de photo */}

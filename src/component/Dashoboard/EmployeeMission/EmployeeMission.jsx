@@ -8,8 +8,8 @@ import "leaflet/dist/leaflet.css";
 function EmployeeMission() {
   const [users, setUsers] = useState([]);
   const [map, setMap] = useState(null); // État pour stocker l'instance de la carte
-  const [ummtoMarker, setUmmtoMarker] = useState(null); 
-
+  const [ummtoMarker, setUmmtoMarker] = useState(null);
+  
   useEffect(() => {
     // Récupérer les utilisateurs confirmés depuis Firestore (nouvelle collection "Users")
     const usersQuery = query(
@@ -49,14 +49,14 @@ function EmployeeMission() {
         popupAnchor: [0, -32], // Définissez l'ancre du popup (point supérieur gauche) en pixels
       });
 
-           // Ajoutez le marqueur avec l'icône personnalisée sur la carte
-           const marker = L.marker([36.7039, 4.0482], {
-            icon: ummtoIcon,
-          }).addTo(newMap);
-    
-          marker.bindPopup("<b>Université Mouloud Mammeri Hassnoua</b>").openPopup();
-    
-          setUmmtoMarker(marker);
+      // Ajoutez le marqueur avec l'icône personnalisée sur la carte
+      const marker = L.marker([36.7039, 4.0482], {
+        icon: ummtoIcon,
+      }).addTo(newMap);
+
+      marker.bindPopup("<b>Université Mouloud Mammeri Hassnoua</b>").openPopup();
+
+      setUmmtoMarker(marker);
       setMap(newMap); // Stocker l'instance de la carte dans l'état
     }
 
@@ -83,7 +83,7 @@ function EmployeeMission() {
       )
         .bindPopup(`<b>${user.name}</b>`)
         .openPopup()
-      
+
         .addTo(map);
 
       // Ajouter un gestionnaire d'événement pour déplacer la carte vers le marqueur lorsqu'il est cliqué
@@ -91,11 +91,15 @@ function EmployeeMission() {
         map.setView([user.location.latitude, user.location.longitude], 15);
       });
     });
-  }, [ummtoMarker,map, users]);
+  }, [ummtoMarker, map, users]);
 
   const handleUserClick = (user) => {
     map.setView([user.location.latitude, user.location.longitude], 15);
   };
+
+
+
+console.log("les utilisateur", users)
   return (
     <div style={{ marginLeft: "2%" }}>
       <Grid
@@ -180,19 +184,20 @@ function EmployeeMission() {
                           marginRight: "10%",
                           background: "#7355F7",
                         }}
+                        src= {user.imgUrl ? user.imgUrl : ""}
                       >
-                        {user.name ? user.name.charAt(0) : ""}
+                     
                       </Avatar>
                       <Typography
                         id="keep-mounted-modal-title"
                         sx={{
-                          fontSize: "14px",
-                          fontWeight: "600",
+                          fontSize: "17px",
+                          fontWeight: "800",
                           textTransform: "uppercase",
                           margin: "auto 0",
                         }}
                       >
-                        <strong> {user.name} </strong>
+                        <strong> {user.name}  {user.lastName} </strong>
                       </Typography>
                     </Box>
                   </Box>
@@ -223,7 +228,7 @@ function EmployeeMission() {
               width: "100%",
               borderRadius: "15px",
               boxShadow: "0 0 10px rgba(0,0,0,0.2)",
-           
+
             }}
           ></Box>
         </Grid>

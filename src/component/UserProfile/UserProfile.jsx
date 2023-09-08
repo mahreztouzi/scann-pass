@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Col, Modal } from "react-bootstrap";
+import { Button, Col, Modal, Card, Form } from "react-bootstrap";
 import "./Profile.css";
 import userimg from "../../Assets/user.svg";
 import { useNavigate } from "react-router-dom";
@@ -9,19 +9,24 @@ import { logoutUser, db, storage } from "../Login/FirebaseAuth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import QRCode from "qrcode.react";
 import Swal from "sweetalert2";
+import Loader from "react-loader-spinner";
+import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+
 
 const UserProfile = () => {
   const auth = getAuth();
-  const [userId, setUserId] = useState();
+  const [userId, setUserId] = useState("");
   const [username, setUsername] = useState();
   const [lastName, setLastName] = useState();
   const [mail, setMail] = useState();
   const [immatricule, setImmatricule] = useState();
   const [isTracking, setIsTracking] = useState(false);
   const [watchId, setWatchId] = useState(null);
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const [imgUrl, setImgUrl] = useState()
   const [selectedImage, setSelectedImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+
 
 
   const navigate = useNavigate();
@@ -44,9 +49,7 @@ const UserProfile = () => {
 
   };
 
-  const handleOpenModale = () => {
-    setShowModal(true)
-  }
+
 
   const handleCloseModal = () => {
     setShowModal(false)
@@ -60,11 +63,26 @@ const UserProfile = () => {
       setMail(infos.data().email);
       setImmatricule(infos.data().immatricule);
       setUserId(infos.data().userId);
-      fetchImgEmploye(userId);
+
+      try {
+        // Attendre la récupération de l'image
+        const hasProfileImage = await fetchImgEmploye(infos.data().userId);
+
+        // Si l'utilisateur n'a pas d'image de profil, ouvrez la modale
+        if (!hasProfileImage) {
+          setShowModal(true);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'image de profil :", error);
+      }
+
     });
 
     return unsubscribe;
-  }, [auth,userId]);
+  }, [auth, showModal]);
+
+
+
   const signOut = () => {
     stopTracking();
     logoutUser();
@@ -117,6 +135,7 @@ const UserProfile = () => {
   // *** envoyer l'image a storage 
   const uploadImageToStorage = async (userId, imageCapture) => {
     try {
+      setLoading(true);
       // Créez une référence unique pour l'image en utilisant l'ID de l'utilisateur
       const storageRef = ref(storage, `userImg/${userId}.jpeg`);
 
@@ -125,7 +144,7 @@ const UserProfile = () => {
 
       // Téléchargez le blob dans Firebase Storage en utilisant uploadBytes
       await uploadBytes(storageRef, blob);
-
+      handleCloseModal();
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
@@ -156,24 +175,29 @@ const UserProfile = () => {
 
   const fetchImgEmploye = async (visitorId) => {
     try {
-      const imgUserRef = ref(storage, `userImg/${visitorId}.png`);
+      const imgUserRef = ref(storage, `userImg/${visitorId}.jpeg`);
       const imgUser = await getDownloadURL(imgUserRef);
       setImgUrl(imgUser)
+      updateUserData(visitorId, imgUser)
+      return true
     } catch (error) {
       console.error("Erreur lors de la récupération du code QR :", error);
+      return false;
     }
   };
-
-
+  const updateUserData = async (userId, imgUrl) => {
+    const userRef = doc(db, "Users", userId);
+    await updateDoc(userRef, { imgUrl });
+  };
   return (
     <Col >
-      <div className="profile" style={{ height: "95vh", marginTop: "1%" }}>
+      <div className="profile" style={{  marginTop: "1%" }}>
         <h2>Profile</h2>
         <div >
-          <img src={userimg} alt="imgEmploy" />
+          <img src={imgUrl ? imgUrl : userimg} alt="imgEmploy" style={{border:"4px solid #7355F7", padding:"3px", boxShadow:"0 0 10px #7355F7", width:"130px", height:"130px"}} />
           <div style={{ display: "flex", flexDirection: "row", justifyContent: "center" }}>
-            <h3 style={{ marginRight: "3%" }}>{username}</h3>
-            <h3>{lastName}</h3>
+            <h3 style={{ marginRight: "3%", textTransform:"capitalize" }}>{username}</h3>
+            <h3 style={{ textTransform:"capitalize"}}>{lastName}</h3>
           </div>
           <h5>{mail}</h5>
           <h5>Véhicule : {immatricule} </h5>
@@ -200,22 +224,38 @@ const UserProfile = () => {
             size="md"
             aria-labelledby="contained-modal-title-vcenter"
             centered
+            backdrop="static"
           >
-            <Modal.Header closeButton>
+            <Modal.Header >
               <Modal.Title>
                 Ajout d'une photo de profile
               </Modal.Title>
             </Modal.Header>
-            <Modal.Body style={{ textAlign: "center" }}>
-              <input type="file" onChange={handleFileChange} />
+            <Modal.Body style={{ textAlign: "center", height: "50vh" }}>
+              {loading ? (
+                <Loader type="ThreeDots" color="#00BFFF" height={90} width={90} style={{marginTop:"30%"}} />
+              ) : selectedImage ? (<img src={selectedImage} style={{ maxWidth: "80%", maxHeight: "80%" }} alt="imgTest" />) : (
+                <div style={{ marginTop: "5%" }}>
+                  {/* <input type="file" onChange={handleFileChange} /> */}
+                  <Form.Control type="file" onChange={handleFileChange} />
+                  <hr />
+                  <br />
+                  <br />
+                  <br />
+                  <Card style={{ background: "#FFCAC5", borderRadius: "10px", border: "1px solid red", padding: "20px" }}>Votre sécurité est notre priorité absolue ! Ajoutez votre photo dès maintenant pour renforcer la sécurité au travail</Card>
+                </div>
+
+
+              )}
             </Modal.Body>
             <Modal.Footer>
-              <Button onClick={() => uploadImageToStorage(userId, selectedImage)} disabled={!selectedImage} >Confirmer</Button>
+              <Button className="btn-secondary" onClick={() => setSelectedImage(null)} disabled={ loading || !selectedImage}>Changer</Button>
+              <Button onClick={() => uploadImageToStorage(userId, selectedImage)} disabled={loading || !selectedImage} >Confirmer</Button>
             </Modal.Footer>
           </Modal>
           {/* fin modale */}
           <button
-            className="mainBtn mt-3"
+            className="mainBtn mt-3 "
             style={{
               background: isTracking ? "red" : "green",
               marginRight: "2%",
@@ -224,12 +264,12 @@ const UserProfile = () => {
           >
             {isTracking ? "Arrêter la mission" : "En mission"}
           </button>
-          <button className="mainBtn mt-3" onClick={signOut}>
+          <button className="mainBtn mt-3 " onClick={signOut}>
             Log out
           </button>
         </div>
-      </div>
-    </Col>
+      </div >
+    </Col >
   );
 };
 
