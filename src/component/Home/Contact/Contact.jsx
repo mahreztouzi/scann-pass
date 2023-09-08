@@ -49,7 +49,7 @@ const Contact = () => {
   const [imgSrc, setImgSrc] = useState(null);
   const [showModalPhoto, setShowModalPhoto] = useState(false)
   const [uploadVisitorId, setUploadVisitorId] = useState()
-  const [imgUrl, setImgUrl] = useState()
+  const imgUrlRef = useRef(null);
   const [loading, setLoading] = useState(false);
 
   console.log("existingDates", existingDates)
@@ -104,139 +104,7 @@ const Contact = () => {
   const formattedDate = dayjs(dateVisite).format("YYYY-MM-DD"); // Formate la date au format "YYYY-MM-DD"
   const formattedTime = dayjs(heureVisite).format("HH:mm"); // Formate l'heure au format "HH:mm"
 
-  //  soumission de formulaire de demande d'un visiteur
-  const onSubmit = async (e) => {
-    e && e.preventDefault();
 
-    // Vérifiez si la date est vide
-    if (!dateVisite || !personConcerned || !valeurSelectionnee) {
-      Swal.fire({
-        title: "Erreur de date",
-        text: "Veuillez remplir tout les champs s'il vous plait !.",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return; // Arrêtez la soumission du formulaire si la date est vide
-    }
-
-    const visitorId = generateVisitorId();
-    setUploadVisitorId(visitorId)
-
-    // Générez le code de vérification
-    const generatedCode = generateVerificationCode();
-
-    if (!imgSrc) {
-      // Si la photo n'est pas encore capturée, ouvrez la modale pour la capture
-      setShowModalPhoto(true);
-      return
-    }
-
-
-
-    // Envoie de l'email de confirmation avec le code
-    try {
-      await sendConfirmationEmail(email, generatedCode, name);
-    } catch (error) {
-      console.error("Erreur lors de l'envoi de l'e-mail de confirmation :", error);
-      Swal.fire({
-        title: "Erreur d'envoi d'e-mail",
-        text: "Une erreur s'est produite lors de l'envoi de l'e-mail de confirmation. Veuillez réessayer plus tard.",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return; // Arrêtez le reste du traitement si l'e-mail n'a pas pu être envoyé.
-    }
-
-
-    // Attendez la réponse de l'utilisateur (utilisation de SweetAlert)
-
-    await Swal.fire({
-      title: 'Confirmation de l\'email',
-      html: `Un email de vérification est envoyé à cet addresse : <b>${email} </b>, pour continuer vous devez confirmer votre addresse email`,
-      input: 'number',
-      inputAttributes: {
-        autocapitalize: 'off',
-      },
-      showCancelButton: true,
-      allowOutsideClick: false,
-      confirmButtonText: 'Confirmer',
-      cancelButtonText: 'Annuler',
-      preConfirm: (verificationCode) => {
-        // Convertir verificationCode en nombre
-        verificationCode = +verificationCode;
-        // Vérifiez si le code saisi correspond au code généré
-        if (verificationCode === +generatedCode) {
-
-
-          return true; // La saisie est correcte
-        } else {
-          Swal.showValidationMessage('Code de vérification incorrect');
-          return false; // La saisie est incorrecte
-        }
-      },
-
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const partenaire = partenairName || partenairIdentité ? [partenairName, partenairIdentité] : "visiteur seule";
-        const qrCodeData = {
-          partenaire,
-          personConcerned,
-          name,
-          prenom,
-          email,
-          numberTel,
-          valeurSelectionnee,
-          idnumber,
-          objet,
-          dateVisite: formattedDate,
-          heureVisite: formattedTime,
-          matricule,
-          timestamp: serverTimestamp(),
-          visitorId: visitorId,
-          isConfirmedService: false,
-          imgUrl
-        };
-
-
-
-        // Envoyer les données chiffrées dans la base de données Firebase
-        addDoc(collection(db, "visitor"), qrCodeData)
-          .then(() => {
-            console.log(
-              "Données chiffrées enregistrées avec succès dans Firebase !"
-            );
-            Swal.fire({
-              title: "Bravo !",
-              text: "Parfait, e-mail confirmé et votre demande sera traitée dans les meilleures conditions. Une réponse vous sera envoyée par e-mail.",
-              icon: "success",
-              confirmButtonText: "OK",
-            })
-          })
-          .catch((error) => {
-            console.error(
-              "Erreur lors de l'enregistrement des données chiffrées :",
-              error
-            );
-          });
-        setPersonConcerned("")
-        setName("")
-        setPrenom("")
-        setEmail("")
-        setNumberTel("")
-        setValeurSelectionnee("")
-        setIdnumber("")
-        setObjet("")
-        setDateVisite("")
-        setHeureVisite("")
-        setMatricule("")
-        setImgUrl()
-
-      }
-    });
-
-
-
-  };
 
   useEffect(() => {
     // créez une requête Firestore pour récupérer les utilisateurs
@@ -398,8 +266,7 @@ const Contact = () => {
       const snapshot = await uploadBytes(storageRef, blob);
       // Une fois le téléchargement terminé, vous pouvez obtenir l'URL de l'image
       const downloadURL = await getDownloadURL(snapshot.ref);
-      setImgUrl(downloadURL);
-      onSubmit();
+      imgUrlRef.current = downloadURL
       handleCloseModalPhoto()
       setLoading(false);
     } catch (error) {
@@ -429,6 +296,136 @@ const Contact = () => {
   }
 
   // *** fin image storage 
+  //  soumission de formulaire de demande d'un visiteur
+  const onSubmit = async (e) => {
+    e && e.preventDefault();
+
+    // Vérifiez si la date est vide
+    if (!dateVisite || !personConcerned || !valeurSelectionnee) {
+      Swal.fire({
+        title: "Erreur de date",
+        text: "Veuillez remplir tout les champs s'il vous plait !.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return; // Arrêtez la soumission du formulaire si la date est vide
+    }
+
+    const visitorId = generateVisitorId();
+    setUploadVisitorId(visitorId)
+
+    // Générez le code de vérification
+    const generatedCode = generateVerificationCode();
+
+    if (!imgSrc) {
+      // Si la photo n'est pas encore capturée, ouvrez la modale pour la capture
+      setShowModalPhoto(true);
+      return
+    }
+
+
+    // Envoie de l'email de confirmation avec le code
+    try {
+      await sendConfirmationEmail(email, generatedCode, name);
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'e-mail de confirmation :", error);
+      Swal.fire({
+        title: "Erreur d'envoi d'e-mail",
+        text: "Une erreur s'est produite lors de l'envoi de l'e-mail de confirmation. Veuillez réessayer plus tard.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return; // Arrêtez le reste du traitement si l'e-mail n'a pas pu être envoyé.
+    }
+
+
+    // Attendez la réponse de l'utilisateur (utilisation de SweetAlert)
+
+    await Swal.fire({
+      title: 'Confirmation de l\'email',
+      html: `Un email de vérification est envoyé à cet addresse : <b>${email} </b>, pour continuer vous devez confirmer votre addresse email`,
+      input: 'number',
+      inputAttributes: {
+        autocapitalize: 'off',
+      },
+      showCancelButton: true,
+      allowOutsideClick: false,
+      confirmButtonText: 'Confirmer',
+      cancelButtonText: 'Annuler',
+      preConfirm: (verificationCode) => {
+        // Convertir verificationCode en nombre
+        verificationCode = +verificationCode;
+        // Vérifiez si le code saisi correspond au code généré
+        if (verificationCode === +generatedCode) {
+
+
+          return true; // La saisie est correcte
+        } else {
+          Swal.showValidationMessage('Code de vérification incorrect');
+          return false; // La saisie est incorrecte
+        }
+      },
+
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const partenaire = partenairName || partenairIdentité ? [partenairName, partenairIdentité] : "visiteur seule";
+        const qrCodeData = {
+          partenaire,
+          personConcerned,
+          name,
+          prenom,
+          email,
+          numberTel,
+          valeurSelectionnee,
+          idnumber,
+          objet,
+          dateVisite: formattedDate,
+          heureVisite: formattedTime,
+          matricule,
+          timestamp: serverTimestamp(),
+          visitorId: visitorId,
+          isConfirmedService: false,
+          imgUrl:imgUrlRef.current
+        };
+
+
+
+        // Envoyer les données chiffrées dans la base de données Firebase
+        addDoc(collection(db, "visitor"), qrCodeData)
+          .then(() => {
+            console.log(
+              "Données chiffrées enregistrées avec succès dans Firebase !"
+            );
+            Swal.fire({
+              title: "Bravo !",
+              text: "Parfait, e-mail confirmé et votre demande sera traitée dans les meilleures conditions. Une réponse vous sera envoyée par e-mail.",
+              icon: "success",
+              confirmButtonText: "OK",
+            })
+          })
+          .catch((error) => {
+            console.error(
+              "Erreur lors de l'enregistrement des données chiffrées :",
+              error
+            );
+          });
+        setPersonConcerned("")
+        setName("")
+        setPrenom("")
+        setEmail("")
+        setNumberTel("")
+        setValeurSelectionnee("")
+        setIdnumber("")
+        setObjet("")
+        setDateVisite("")
+        setHeureVisite("")
+        setMatricule("")
+      }
+    });
+
+
+
+  };
   return (
     <section id="contact">
       <Col md={11} className="mx-auto">
